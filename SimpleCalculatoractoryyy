@@ -1,0 +1,64 @@
+import sys
+
+# Configure stdin to use UTF-8 encoding to handle Cyrillic or other non-ASCII input
+sys.stdin.reconfigure(encoding='utf-8')
+
+def calculate(expression):
+    """Process a mathematical expression like '2 + 3' and return the result."""
+    try:
+        # Split input into parts (e.g., "2 + 3" -> ["2", "+", "3"])
+        parts = expression.strip().split()
+        if len(parts) != 3:
+            return "Error: Invalid input. Use format: number operator number (e.g., 2 + 3)"
+        
+        num1, op, num2 = parts
+        # Convert inputs to numbers
+        num1 = float(num1)
+        num2 = float(num2)
+        
+        # Perform calculation based on operator
+        if op == '+':
+            return str(num1 + num2)
+        elif op == '-':
+            return str(num1 - num2)
+        elif op == '*':
+            return str(num1 * num2)
+        elif op == '/':
+            if num2 == 0:
+                return "Error: Division by zero"
+            return str(num1 / num2)
+        else:
+            return "Error: Invalid operator. Use +, -, *, or /"
+    except ValueError:
+        return "Error: Invalid number format. Use numbers like 1, 2.5, etc."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def main():
+    """Main function to run the console calculator."""
+    print("Console calculator. Enter a command (e.g., '2 + 3') or 'exit' to quit.")
+    
+    while True:
+        try:
+            # Prompt for input
+            print("Waiting for input...")  # Debug line to confirm prompt
+            command = input("Command: ")
+            print(f"Received: {command}")  # Debug line to confirm input received
+            
+            # Check for exit command
+            if command.lower().strip() == 'exit':
+                print("Exiting calculator...")
+                break
+            
+            # Process the calculation
+            result = calculate(command)
+            print(result)
+            
+        except KeyboardInterrupt:
+            print("\nProgram interrupted by user.")
+            break
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    main()
