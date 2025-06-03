@@ -1,0 +1,153 @@
+import sys
+import re
+from abc import ABC, abstractmethod
+
+# Настройка ввода для поддержки кириллицы (UTF-8)
+sys.stdin.reconfigure(encoding='utf-8')
+
+# Абстрактный класс команды для шаблона Command
+class Command(ABC):
+    @abstractmethod
+    def execute(self, a: float, b: float) -> float:
+        """Выполняет операцию над двумя числами."""
+        pass
+
+# Конкретные команды для операций
+class AddCommand(Command):
+    def execute(self, a: float, b: float) -> float:
+        return a + b
+
+class SubtractCommand(Command):
+    def execute(self, a: float, b: float) -> float:
+        return a - b
+
+class MultiplyCommand(Command):
+    def execute(self, a: float, b: float) -> float:
+        return a * b
+
+class DivideCommand(Command):
+    def execute(self, a: float, b: float) -> float:
+        if b == 0:
+            raise ValueError("Деление на ноль")
+        return a / b
+
+# Модель: содержит данные и логику вычислений
+class CalculatorModel:
+    def __init__(self):
+        self.commands = {
+            '+': AddCommand(),
+            '-': SubtractCommand(),
+            '*': MultiplyCommand(),
+            '/': DivideCommand()
+        }
+
+    def calculate(self, expression: str) -> str:
+        """Обрабатывает выражение, например, '2 + 3' или '2+3'."""
+        try:
+            # Регулярное выражение для разбора ввода
+            pattern = r'^(\d*\.?\d*)\s*([+\-*/])\s*(\d*\.?\d*)$'
+            match = re.match(pattern, expression.strip())
+            
+            if not match:
+                return "Ошибка: неверный формат ввода. Используйте: число оператор число (например, 2 + 3 или 2+3)"
+            
+            num1, op, num2 = match.groups()
+            num1 = float(num1) if num1 else 0.0
+            num2 = float(num2) if num2 else 0.0
+            
+            # Выполнение команды
+            if op not in self.commands:
+                return "Ошибка: неверный оператор. Используйте +, -, *, /"
+            result = self.commands[op].execute(num1, num2)
+            return str(result)
+        except ValueError as e:
+            return f"Ошибка: {str(e)}"
+        except Exception as e:
+            return f"Ошибка: {str(e)}"
+
+# ViewModel: связывает модель и представление
+class CalculatorViewModel:
+    def __init__(self):
+        self.model = CalculatorModel()
+        self.result = ""
+        self.error = ""
+
+    def process_input(self, command: str) -> None:
+        """Обрабатывает ввод пользователя."""
+        if command.lower().strip() == 'выход':
+            self.result = "Завершение работы калькулятора..."
+            self.error = ""
+            return
+        
+        result = self.model.calculate(command)
+        if result.startswith("Ошибка"):
+            self.error = result
+            self.result = ""
+        else:
+            self.result = result
+            self.error = ""
+
+    def get_result(self) -> str:
+        """Возвращает результат вычисления."""
+        return self.result
+
+    def get_error(self) -> str:
+        """Возвращает сообщение об ошибке."""
+        return self.error
+
+    def is_exit(self) -> bool:
+        """Проверяет, является ли команда выходом."""
+        return self.result == "Завершение работы калькулятора..."
+
+# Представление: консольный интерфейс
+class CalculatorView:
+    def display_message(self, message: str) -> None:
+        """Отображает сообщение."""
+        print(message)
+    
+    def get_input(self) -> str:
+        """Получает ввод от пользователя."""
+        print("Ожидание ввода...")
+        command = input("Команда: ")
+        print(f"Получено: {command}")
+        return command
+
+# Контроллер: управляет взаимодействием
+class CalculatorController:
+    def __init__(self, view: CalculatorView, view_model: CalculatorViewModel):
+        self.view = view
+        self.view_model = view_model
+    
+    def run(self):
+        """Основной цикл калькулятора."""
+        self.view.display_message("Консольный калькулятор. Введите команду (например, '2 + 3' или '2+3') или 'выход' для завершения.")
+        
+        while True:
+            try:
+                command = self.view.get_input()
+                self.view_model.process_input(command)
+                
+                if self.view_model.is_exit():
+                    self.view.display_message(self.view_model.get_result())
+                    break
+                
+                if self.view_model.get_error():
+                    self.view.display_message(self.view_model.get_error())
+                elif self.view_model.get_result():
+                    self.view.display_message(self.view_model.get_result())
+                
+            except KeyboardInterrupt:
+                self.view.display_message("\nПрограмма прервана пользователем.")
+                break
+            except Exception as e:
+                self.view.display_message(f"Произошла ошибка: {str(e)}")
+
+def main():
+    """Инициализация и запуск калькулятора MVVM."""
+    view = CalculatorView()
+    view_model = CalculatorViewModel()
+    controller = CalculatorController(view, view_model)
+    controller.run()
+
+if __name__ == "__main__":
+    main()
